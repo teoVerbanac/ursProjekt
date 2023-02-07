@@ -1,0 +1,17 @@
+Spajanje LCD-a (sve na PORTB)
+Vo - 3
+Rs - 0
+RW - 1
+E  - 2
+DATA0(4) - 7
+DATA1(5) - 6
+DATA2(6) - 5
+DATA3(7) - 4
+
+PORTD 
+Od 4 - 7 senzori za joytstick
+PORTA 
+Od 4-7 ledice
+
+
+Portovi D0, C2, C3, C4, C5 ne delaju!
