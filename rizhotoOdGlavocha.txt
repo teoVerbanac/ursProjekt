@@ -1,0 +1,108 @@
+#define F_CPU 7372800UL
+#include <util/delay.h>
+#include <avr/io.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <avr/interrupt.h>
+#include "lcd.h"
+#define TOP_OF_TIMER 28800
+
+int seconds = 0;
+ISR(TIMER1_COMPA_vect) {
+    seconds++;
+}
+
+
+int randNumber()
+{
+	int num = 0;
+	num = TCNT0 % 4;
+	return num;	
+}
+void check_activity(int *punti, int *ledOn, int brLedice)
+{
+		PORTA ^= _BV(7 - *ledOn);
+			if(brLedice == *ledOn)
+			{
+				(*punti)++;
+			}
+			else{
+				lcd_gotoxy(4, 0);
+				lcd_puts("Pogresno");
+				_delay_ms(2000);
+				lcd_gotoxy(4, 0);
+				lcd_puts("        ");
+			}
+			
+			_delay_ms(3);
+			while((PIND & _BV(7 - brLedice)));
+			*ledOn = randNumber();
+			PORTA ^= _BV(7 - *ledOn);
+	return;
+}
+int main(void)
+{
+	//za LCD
+	DDRB|=(1<<PB3);
+    TCCR0 = _BV(WGM01) | _BV(WGM00) | _BV(CS01) | _BV(COM01);
+    OCR0 = 100;
+	//brojac sekunda
+	TIMSK |= _BV(OCIE1A);
+	TCCR1B |= _BV(CS12) | _BV(WGM12);
+	OCR1A = TOP_OF_TIMER;
+	
+	DDRD = 0xf0;
+	DDRA = 0xf0;
+	PORTA |= 0xf0;
+    lcd_init(LCD_DISP_ON);
+    lcd_clrscr();
+	int gameOn = 1;
+	int ledOn = 0;
+	int punti = 0;
+	PORTA ^= _BV(7 - ledOn);
+	sei();
+    while (1){
+		if(seconds == 40)
+		{
+			lcd_clrscr();
+			lcd_gotoxy(0, 0);
+			lcd_puts("Vrijeme isetklo!");
+			lcd_gotoxy(0, 1);
+			lcd_putc('0' + (punti / 10));
+			lcd_putc('0' + (punti % 10));
+			gameOn = 0;
+			_delay_ms(500);
+		}
+		else{
+			if((PIND & _BV(7)) && gameOn)
+			{
+				check_activity(&punti, &ledOn, 0);
+			}
+		
+			else if((PIND & _BV(6)) && gameOn)
+			{
+				check_activity(&punti, &ledOn, 1);
+			}
+			else if((PIND & _BV(5)) && gameOn)
+			{
+				check_activity(&punti, &ledOn, 2);
+			
+			}
+			else if((PIND & _BV(4)) && gameOn)
+			{
+				check_activity(&punti, &ledOn, 3);
+			
+			}
+			if(gameOn){
+			lcd_gotoxy(1, 1);
+			lcd_putc('0' + ledOn);
+			lcd_puts("  ");
+			lcd_putc('0' + (punti / 10));
+			lcd_putc('0' + (punti % 10));
+			lcd_puts("  ");
+			lcd_putc('0' + (seconds / 10));
+			lcd_putc('0' + (seconds % 10));
+				}
+			}
+	}
+}
